@@ -1,0 +1,91 @@
+{
+  "release": "SparseEcho 1.0",
+  "package_version": "1.0",
+  "algorithm": {
+    "name": "Spectrally Factorized Physical-Time Inversion",
+    "acronym": "SFPTI",
+    "single_pass_realization": "Gray Temporal Fiber (GTF)",
+    "virtual_time_fallback": "Virtual-Time Query Compilation (VTQC)"
+  },
+  "public_boundary": "hardware-neutral query scheduling and slot-level complex baseband",
+  "physical_query_profile": {
+    "identity_bits": 32,
+    "local_bits": 8,
+    "views": 14,
+    "states_per_view": 256,
+    "physical_slots": 3584
+  },
+  "validation": {
+    "tests": {
+      "collected": 13,
+      "passed": 13,
+      "record": "results/test_acceptance.txt"
+    },
+    "combined_fault": {
+      "seeds": 10,
+      "mean_precision": 1.0,
+      "min_precision": 1.0,
+      "mean_recall": 0.990625,
+      "min_recall": 0.96875,
+      "mean_f1": 0.9952380952380953,
+      "min_f1": 0.9841269841269841,
+      "passes_release_gate": 10,
+      "release_gate": {
+        "precision": 0.99,
+        "recall": 0.95
+      },
+      "total_true_sources": 320,
+      "total_true_positive": 317,
+      "total_false_positive": 0,
+      "total_false_negative": 3,
+      "sum_seed_runtime_seconds": 85.1107235440004
+    },
+    "theory": {
+      "gray_time_nonzero_walsh_coefficients": 8,
+      "expected_minimum_support": 8,
+      "tail_above_order_3_at_0_4_cycles": 7.386510556560025e-06,
+      "phase_span_for_1e_5_tail": 0.41623052493938806
+    },
+    "complex64_replay": {
+      "decoder_ground_truth_access": false,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "true_positive": 32,
+      "false_positive": 0,
+      "false_negative": 0
+    }
+  },
+  "artifacts": {
+    "sparseecho_sfpti-1.0-py3-none-any.whl": {
+      "sha256": "4c1735de1db63c76b59db506af4e004aa56259aaa85ed3844e63e0bf3097f690",
+      "bytes": 34889
+    },
+    "README.md": {
+      "sha256": "3f567a36afb62e763607ad826fea45eebaf29b89311e2a4934d1b4687086f8d0"
+    },
+    "docs/SFPTI.md": {
+      "sha256": "8da1e6694c4075aa3b00bd2c2a13eda6f17745a3f3d2c9675a7da1eee2832390"
+    },
+    "results/combined_fault_acceptance.json": {
+      "sha256": "d3bd2f5b0510e2aebe527bce30f4895fc090039ab65b64532d14f800b167bb26"
+    },
+    "results/theory_acceptance.json": {
+      "sha256": "bee3390a8f0038bcc76e96f86b10d973ce6061393e6ed0f0778ab605c4c4bba0"
+    },
+    "results/replay_acceptance.json": {
+      "sha256": "aff48582e5bbc28aa7e803e1615015382cfab4540b37d345e868bbc12f9402fa"
+    }
+  },
+  "environment": {
+    "python": "3.13.5",
+    "numpy": "2.3.5",
+    "platform": "Linux-6.18.35-x86_64-with-glibc2.41"
+  },
+  "field_capture_included": false,
+  "notes": [
+    "The release contains no population-scale codebook or 2^32 identity loop.",
+    "Synthetic physical-query validation and binary replay are not presented as field-range validation.",
+    "Prior-art documentation is an engineering boundary statement, not a patentability or FTO opinion."
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "profile": "sfpti-1.0-combined-fault",
+  "software_version": "1.0",
+  "scenario": {
+    "identity_space_bits": 32,
+    "active": 32,
+    "receivers": 8,
+    "hash_views": 14,
+    "states_per_view": 256,
+    "physical_slots": 3584,
+    "near_far_power_db": 30.0,
+    "weakest_fiber_matched_snr_db": 6.0,
+    "max_residual_phase_span_cycles_per_view": 0.4,
+    "max_quadratic_phase_cycles": 0.05,
+    "max_fractional_amplitude_drift": 0.04,
+    "slot_erasure_rate": 0.02,
+    "switch_memory_coefficient": 0.1
+  },
+  "summary": {
+    "seeds": 10,
+    "mean_precision": 1.0,
+    "min_precision": 1.0,
+    "mean_recall": 0.990625,
+    "min_recall": 0.96875,
+    "mean_f1": 0.9952380952380953,
+    "min_f1": 0.9841269841269841,
+    "passes_release_gate": 10,
+    "release_gate": {
+      "precision": 0.99,
+      "recall": 0.95
+    },
+    "total_true_sources": 320,
+    "total_true_positive": 317,
+    "total_false_positive": 0,
+    "total_false_negative": 3,
+    "sum_seed_runtime_seconds": 85.1107235440004
+  },
+  "environment": {
+    "python": "3.13.5",
+    "platform": "Linux-6.18.35-x86_64-with-glibc2.41",
+    "numpy": "2.3.5"
+  },
+  "execution_note": "Seeds were executed in bounded parallel batches to fit the release-validation runtime envelope; per-seed elapsed_seconds includes local contention and is not a throughput benchmark.",
+  "runs": [
+    {
+      "seed": 0,
+      "precision": 1.0,
+      "recall": 0.96875,
+      "f1": 0.9841269841269841,
+      "true_positive": 31,
+      "false_positive": 0,
+      "false_negative": 1,
+      "recovered": 31,
+      "elapsed_seconds": 22.77593772199998
+    },
+    {
+      "seed": 1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "true_positive": 32,
+      "false_positive": 0,
+      "false_negative": 0,
+      "recovered": 32,
+      "elapsed_seconds": 7.726013919000252
+    },
+    {
+      "seed": 2,
+      "precision": 1.0,
+      "recall": 0.96875,
+      "f1": 0.9841269841269841,
+      "true_positive": 31,
+      "false_positive": 0,
+      "false_negative": 1,
+      "recovered": 31,
+      "elapsed_seconds": 7.871959828000399
+    },
+    {
+      "seed": 3,
+      "precision": 1.0,
+      "recall": 0.96875,
+      "f1": 0.9841269841269841,
+      "true_positive": 31,
+      "false_positive": 0,
+      "false_negative": 1,
+      "recovered": 31,
+      "elapsed_seconds": 10.188350659999742
+    },
+    {
+      "seed": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "true_positive": 32,
+      "false_positive": 0,
+      "false_negative": 0,
+      "recovered": 32,
+      "elapsed_seconds": 2.6942386569999144
+    },
+    {
+      "seed": 5,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "true_positive": 32,
+      "false_positive": 0,
+      "false_negative": 0,
+      "recovered": 32,
+      "elapsed_seconds": 21.709080618999906
+    },
+    {
+      "seed": 6,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "true_positive": 32,
+      "false_positive": 0,
+      "false_negative": 0,
+      "recovered": 32,
+      "elapsed_seconds": 3.1569274990006306
+    },
+    {
+      "seed": 7,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "true_positive": 32,
+      "false_positive": 0,
+      "false_negative": 0,
+      "recovered": 32,
+      "elapsed_seconds": 3.4336368909998782
+    },
+    {
+      "seed": 8,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "true_positive": 32,
+      "false_positive": 0,
+      "false_negative": 0,
+      "recovered": 32,
+      "elapsed_seconds": 3.5604055579997294
+    },
+    {
+      "seed": 9,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "true_positive": 32,
+      "false_positive": 0,
+      "false_negative": 0,
+      "recovered": 32,
+      "elapsed_seconds": 1.9941721909999615
+    }
+  ]
+}

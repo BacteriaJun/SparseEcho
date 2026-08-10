@@ -1,0 +1,6 @@
+SparseEcho
+Copyright 2026 SparseEcho contributors
+
+This distribution contains an application-neutral reconstruction core. External platform geometry,
+endpoint implementation, calibrated deployment transfer functions, field calibration material and
+operational control layers are outside the public tree.
