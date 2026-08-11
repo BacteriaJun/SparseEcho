@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparseecho.invalid/schema/runtime-event-v1.json",
+  "title": "SparseEcho runtime telemetry event",
+  "type": "object",
+  "required": ["event", "plan_fingerprint"],
+  "properties": {
+    "event": {"type": "string"},
+    "plan_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "wall_time_ns": {"type": "integer", "minimum": 0}
+  },
+  "additionalProperties": true
+}

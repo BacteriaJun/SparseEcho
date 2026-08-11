@@ -1,0 +1,28 @@
+[runtime]
+max_reacquisitions = 2
+max_invalid_fraction = 0.10
+max_consecutive_invalid = 32
+max_slot_timing_error_fraction = 0.05
+min_receivers = 2
+max_receivers = 64
+
+[engine]
+identity_bits = 32
+local_bits = 8
+n_views = 16
+hash_seed = 24301
+view_max_components = 48
+view_false_alarm_rate = 0.20
+min_view_support = 13
+spatial_subspace_rank = 2
+spatial_consistency_threshold = 0.70
+modeled_shell_order = 3
+fiber_leakage_budget = 1e-5
+
+[calibration]
+# Deployment-specific calibration should override these reference values.
+switch_fir_taps = [0.90, 0.10]
+
+[telemetry]
+format = "jsonl"
+path = "var/sparseecho/runtime.jsonl"

@@ -1,94 +1,55 @@
-# Acquisition integration
+# Integration
 
-SparseEcho does not require the synthetic channel. The production boundary is a compiled query plan plus slot-major complex receiver vectors.
+SparseEcho integrates at the query-plan / coherent-baseband boundary. The deployment owns the mechanism that applies a query state and acquires the corresponding complex receiver vector.
 
-## 1. Compile the query plan
+## Acquisition backend
 
-```python
-from sparseecho import compile_query_plan
-
-plan = compile_query_plan()
-print(plan.physical_slots)  # 3584 in the public profile
-```
-
-Each `QuerySlot` identifies the view, physical rank, local query state and global 32-bit challenge mask. An external acquisition controller is responsible for applying the requested state at the corresponding slot boundary.
-
-The public plan is deterministic. A deployment can persist `plan.to_dict()` beside a capture so that acquisition and reconstruction use the same schedule description.
-
-## 2. Receiver contract
-
-For each physical state, provide one coherent complex value per receiver channel:
-
-```text
-slots.shape == (plan.physical_slots, n_rx)
-slots.dtype  == complex64 or complex128
-```
-
-A separate Boolean vector marks whether each state is usable:
-
-```text
-valid.shape == (plan.physical_slots,)
-```
-
-An invalid state is not interpreted as a measured zero. It is an erasure and is routed through the erasure-aware recovery path.
-
-## 3. Calibration responsibility
-
-Before reconstruction, the integration layer should establish the quantities that are hardware-specific but required by the public core:
-
-- receiver complex gain/phase consistency across a local aperture;
-- slot timing and state-settling validity;
-- a measured switching-memory model when transient compensation is enabled;
-- a coarse physical gate narrow enough that the configured residual phase-span budget is meaningful;
-- saturation/invalid-state flags.
-
-SparseEcho deliberately does not prescribe how those quantities are obtained. Their calibration depends on the endpoint, propagation path and receiver implementation that sit outside the public repository.
-
-## 4. Switching-memory model
-
-The reference implementation contains a calibrated first-order memory operator:
-
-```text
-y[j] = (1 - eps) x[j] + eps x[j-1]
-```
-
-It exists to make switching transients explicit in the reconstruction contract. `eps` must be treated as a calibration parameter; a real front end should not assume that its transient is exactly first order. A different measured response can be adapted before `SparseEchoEngine.process_capture()` or implemented as another calibration operator.
-
-## 5. Timing and aperture budget
-
-SFPTI treats execution time as part of the inverse model. The planner can bound a local Gray sweep from a residual-Doppler estimate and a tolerated unmodeled fiber tail:
+The Python reference uses this protocol:
 
 ```python
-from sparseecho import ApertureBudget
-
-budget = ApertureBudget(local_bits=8, modeled_shell_order=3, leakage_budget=1e-5)
-max_view_seconds = budget.max_view_seconds(residual_doppler_hz=120.0)
+class AcquisitionBackend(Protocol):
+    def acquire(self, plan: QueryPlan, request: AcquisitionRequest) -> CaptureFrame:
+        ...
 ```
 
-This budget belongs between coarse physical acquisition and the sparse identity inversion. The coarse estimator is deployment-specific and is not implemented by guessing a carrier or geometry in the public package.
+`AcquisitionRequest` carries an aperture scale and pass count. `CaptureFrame` returns:
 
-## 6. Binary replay
+- plan SHA-256 fingerprint;
+- monotonically increasing sequence ID;
+- monotonic start/end time;
+- complex slot array;
+- validity mask;
+- optional per-slot timestamps;
+- actual aperture scale and pass count.
 
-The provided capture directory format separates acquisition from reconstruction:
+The runtime validates these fields before the inverse is entered.
 
-```text
-capture/
-  capture.c64     slot-major interleaved complex64
-  valid.u8        one validity byte per physical slot
-  metadata.json   dimensions and query-plan metadata
-```
+## Timing requirements
 
-Use:
+The GTF path assumes a sufficiently uniform physical cadence inside a view. If per-slot timestamps are supplied, the runtime checks:
 
-```python
-from sparseecho.io import open_capture_directory
+- strict monotonicity;
+- maximum fractional cadence error;
+- positive capture duration.
 
-capture = open_capture_directory("capture")
-result = engine.process_capture(capture.slots, capture.valid)
-```
+A deployment with intentionally irregular timing should provide a corresponding forward/inverse timing model rather than disabling validation.
 
-`capture.c64` is memory mapped; the replay path does not need a simulator object or simulator truth.
+## Calibration
 
-## 7. Boundary of responsibility
+The open calibration contract contains a named epoch, causal switch-response taps and optional receiver complex gains. `JsonCalibrationStore` reads a data-only JSON representation; production systems may provide the same snapshot from another service.
 
-A complete deployed system may have additional control, geometry, calibration, authorization and platform layers around this interface. They are intentionally outside the public source tree. SparseEcho's responsibility begins once physical query states can be scheduled and coherent slot-level observations can be presented at this contract.
+Calibration expiry is checked against the capture's monotonic end time when an expiry is provided.
+
+## Reacquisition
+
+The default controller does not extend a high-dynamics aperture by blindly collecting more repeated passes. When the measured temporal-fiber tail exceeds budget it requests a shorter physical aperture. The acquisition backend decides how to realize that request within the surrounding system.
+
+The 2/4-pass VTQC primitives remain available for integrations whose timing model justifies them, but they are not the default runtime response.
+
+## C and RPC boundaries
+
+- `include/sparseecho/runtime.h` defines buffer-oriented structs for an in-process or FFI integration.
+- `proto/sparseecho_runtime.proto` defines transport-neutral acquisition/result messages.
+- `schemas/` defines file/message manifests used by replay and archival tooling.
+
+None of these files contain endpoint circuitry, carrier configuration, deployment geometry or platform control.

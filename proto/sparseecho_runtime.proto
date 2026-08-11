@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package sparseecho.runtime.v1;
+
+message AcquisitionRequest {
+  string plan_fingerprint = 1;
+  double aperture_scale = 2;
+  uint32 pass_count = 3;
+  string reason = 4;
+}
+
+message CaptureDescriptor {
+  string plan_fingerprint = 1;
+  uint64 sequence_id = 2;
+  uint64 monotonic_start_ns = 3;
+  uint64 monotonic_end_ns = 4;
+  uint32 physical_slots = 5;
+  uint32 receivers = 6;
+  uint32 pass_count = 7;
+  double aperture_scale = 8;
+  string calibration_epoch = 9;
+  string payload_uri = 10;       // transport-owned raw complex buffer
+  string validity_uri = 11;      // transport-owned validity bitmap/vector
+  string timestamps_uri = 12;    // optional int64 slot timestamps
+}
+
+message IdentityEstimate {
+  uint32 identity = 1;
+  uint32 view_support = 2;
+  double spatial_consistency = 3;
+}
+
+message ReconstructionResult {
+  string plan_fingerprint = 1;
+  uint64 sequence_id = 2;
+  repeated IdentityEstimate identities = 3;
+  uint32 candidate_count = 4;
+  uint32 pass_count = 5;
+}
+
+message RuntimeDecision {
+  enum Action {
+    ACCEPT = 0;
+    REACQUIRE = 1;
+    REJECT = 2;
+  }
+  Action action = 1;
+  double aperture_scale_factor = 2;
+  double measured_phase_span_cycles = 3;
+  double allowed_phase_span_cycles = 4;
+  double fiber_tail_energy = 5;
+  string reason = 6;
+}
+
+message RuntimeFault {
+  string code = 1;
+  string detail = 2;
+  bool recoverable = 3;
+}
+
+message RuntimeOutcome {
+  string state = 1;
+  ReconstructionResult result = 2;
+  RuntimeDecision decision = 3;
+  RuntimeFault fault = 4;
+}
+
+// Optional process boundary for deployments that use RPC. The Python
+// reference runtime does not require gRPC and the raw sample transport remains
+// owned by the embedding system.
+service AcquisitionEndpoint {
+  rpc Acquire(AcquisitionRequest) returns (CaptureDescriptor);
+}
+
+service ReconstructionEndpoint {
+  rpc Reconstruct(CaptureDescriptor) returns (RuntimeOutcome);
+}

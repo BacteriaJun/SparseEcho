@@ -1,260 +1,183 @@
-# SparseEcho 1.0
+# SparseEcho 1.1
 
-**Hardware-neutral reconstruction of sparse, time-varying modulated scatterer fields from sequential complex-baseband measurements.**
+**SFPTI reconstruction runtime for sequential, time-varying sparse physical measurements.**
 
-SparseEcho implements **Spectrally Factorized Physical-Time Inversion (SFPTI)**. The central design problem is not merely recovering a sparse vector; it is making a sparse-transform algorithm usable when its mathematical queries must be executed by a real, sequential, time-varying physical system.
+SparseEcho is the public reconstruction component separated from a larger operational measurement system. The repository starts at compiled query plans and coherent slot-level complex baseband. Endpoint hardware, deployment geometry, field calibration assets and higher-level operational control remain outside the public boundary.
 
-The public tree ends at the **query-scheduling / slot-level complex-baseband boundary**. It does not contain endpoint implementation, deployment geometry, calibrated propagation transfer functions, field calibration material, platform control, scheduling policy above the reconstruction layer, or operational thresholds tied to a particular deployment.
+Python is the reference implementation, not the deployment assumption. Version 1.1 also publishes data schemas, a C ABI header and protobuf contracts so an acquisition or reconstruction service can implement the same boundary in another language or process.
 
-That boundary is deliberate. The interfaces in this repository are shaped by an existing deployment class in which query states are physically switched and received coherently rather than evaluated from a stored vector. This is why switch settling, missing slots, near/far mixtures, residual motion and multi-receiver ingest are first-class API concerns rather than simulator decorations.
+The core method is **Spectrally Factorized Physical-Time Inversion (SFPTI)**. It treats physical execution time as a coordinate of the inverse problem. Query order, temporal-nuisance structure and recovery are designed together so that time variation remains structured in the transform domain instead of being treated as arbitrary leakage.
 
-## SFPTI in one diagram
+## What 1.1 closes
 
-```text
-sparse-transform query demand
-          |
-          v
-  query-plan compiler
-          |
-          |  Gray-ranked physical execution
-          v
-sequential complex-baseband slots
-          |
-          +--> switch-response calibration
-          +--> erasure mask / repair
-          |
-          v
- Gray Temporal Fiber (GTF)
-          |
-          |  time variation becomes a structured
-          |  Walsh-domain spectral fiber
-          v
- local 2^r hash apertures
-          |
-          v
- sparse local recovery + list consistency
-          |
-          v
-32-bit sparse address/support reconstruction
-```
-
-The default public profile uses 14 independent 8-bit hash views over a 32-bit address space. Each view executes one 256-state Gray sweep:
+1.1 closes the public software-side operating loop:
 
 ```text
-14 views × 256 states = 3584 physical query states
+query plan
+   ↓
+acquisition backend
+   ↓
+frame validation ── plan fingerprint / sequence / timing / erasures
+   ↓
+calibration snapshot
+   ↓
+SFPTI reconstruction
+   ↓
+fiber-tail decision
+   ├─ accept
+   └─ request shorter-aperture reacquisition
+   ↓
+telemetry + reconstruction result
 ```
 
-No `2^32` codebook is allocated and no population-scale loop is performed.
+The runtime is deliberately bounded. Reacquisition count, erasure fraction, burst length, receiver count and slot-timing error all have explicit limits and fault codes.
 
-## The named algorithm
+## Public interfaces
 
-### Spectrally Factorized Physical-Time Inversion — SFPTI
+The repository contains four equivalent integration surfaces:
 
-SFPTI co-designs the **execution order of physical transform queries** with the target transform domain. Instead of treating sequential measurement time as unstructured distortion, it chooses a schedule for which physical time has a low-generator Walsh representation. Smooth temporal nuisance therefore becomes a structured spectral fiber rather than arbitrary transform leakage.
+- Python runtime API under `src/sparseecho/runtime/`;
+- C data contract in [`include/sparseecho/runtime.h`](include/sparseecho/runtime.h);
+- protobuf messages in [`proto/sparseecho_runtime.proto`](proto/sparseecho_runtime.proto);
+- JSON schemas under [`schemas/`](schemas/).
 
-The current realization is **Gray Temporal Fiber (GTF)**.
+These files define the open integration boundary. They do not describe endpoint implementation.
 
-For an `r`-bit local query `u`, reflected Gray execution gives the centered physical rank
+## Reference profile
 
-\[
-\tau(u)=-\frac12\sum_{i=0}^{r-1}2^i\chi_{s_i}(u),
-\]
-
-where `s_i` are `r` linearly independent Walsh masks. An injective `2^r`-slot time map cannot have fewer than `r` Walsh characters, so Gray rank attains the minimum possible support size; it simultaneously changes only one query bit between adjacent physical states.
-
-For constant residual Doppler,
-
-\[
-h(u)=e^{j\Omega\tau(u)},
-\]
-
-GTF factorizes exactly:
-
-\[
-e^{j\Omega\tau(u)}=
-\prod_{i=0}^{r-1}
-\left(\cos\theta_i-j\chi_{s_i}(u)\sin\theta_i\right),
-\qquad
-\theta_i=\frac{\Omega 2^i}{2}.
-\]
-
-The Walsh coefficient at the XOR of a generator subset `S` is therefore
-
-\[
-c_S=(-j)^{|S|}
-\prod_{i\in S}\sin\theta_i
-\prod_{i\notin S}\cos\theta_i.
-\]
-
-This gives an exact shell-energy law and lets the planner translate a residual-Doppler estimate into a physical aperture budget. See [`docs/SFPTI.md`](docs/SFPTI.md).
-
-## Why physical time is part of the inverse problem
-
-A conventional sparse transform assumes that requested coordinates are sampled from one mathematical object. A switched physical system instead returns
+The current public profile uses:
 
 ```text
-y(a1, t1), y(a2, t2), ...
+identity space          32 bit
+local aperture           8 bit / 256 states
+hash views              16
+single-pass states      4096
+receiver channels        configurable
+execution order          Gray by default
 ```
 
-while the underlying channel evolves between `t1`, `t2`, ... . SparseEcho treats this mismatch explicitly.
+Gray is a deployment default, not a novelty claim. Natural binary ordering has the same minimal time-character support; Gray additionally limits adjacent query transitions to one bit.
 
-The fast path uses a single GTF sweep and models temporal evolution as a spectral fiber. If the configured fiber-tail budget is exceeded, **Virtual-Time Query Compilation (VTQC)** provides a multi-pass fallback using moment-constrained interpolation to synthesize measurements at a common virtual time.
+## Runtime use
 
-## Engineering contract
-
-The reconstruction engine consumes one complex vector per physical query state:
-
-```text
-shape: (physical_slots, receivers)
-dtype: complex64 / complex128
-layout: slot-major, receiver-minor
-```
-
-An optional validity mask marks corrupted or absent states. The public reference front end supports:
-
-- complex multi-receiver ingest;
-- calibrated first-order switching-memory deconvolution;
-- slot erasure masks and candidate-conditioned repair;
-- continuous residual phase evolution inside each local aperture;
-- near/far source power spread;
-- raw `complex64` memory-mapped replay.
-
-The synthetic channel is only one producer of this contract. The main engine does not depend on simulator objects or simulator truth. See [`docs/INTEGRATION.md`](docs/INTEGRATION.md) for the acquisition boundary.
-
-## Installation
+Install the reference package:
 
 ```bash
-python -m pip install .
+python -m pip install -e .
 ```
 
-Development install:
+Compile and fingerprint a plan:
 
 ```bash
-python -m pip install -e '.[dev]'
-python -m pytest
+sparseecho plan --views 16 --ordering gray --output plan.json
 ```
 
-## Quick start
-
-Run the physical-query synthetic path:
+Replay an existing capture:
 
 ```bash
-sparseecho demo --seed 7
+sparseecho replay ./capture
 ```
 
-Write the same acquisition to the binary replay contract:
-
-```bash
-sparseecho demo --seed 7 --write-capture ./capture-demo
-sparseecho replay ./capture-demo
-```
-
-Emit the deterministic 1.0 query plan:
-
-```bash
-sparseecho plan --output query-plan.json
-```
-
-Compute a physical aperture limit from an SFPTI fiber-tail budget:
-
-```bash
-sparseecho budget \
-  --residual-doppler-hz 120 \
-  --shell-order 3 \
-  --leakage 1e-5
-```
-
-Python:
+A deployment backend implements one method:
 
 ```python
-from sparseecho import EngineConfig, SparseEchoEngine, compile_query_plan
-from sparseecho.io import open_capture_directory
+from sparseecho import CaptureFrame, ReconstructionRuntime
 
-plan = compile_query_plan()
-engine = SparseEchoEngine(EngineConfig(), plan)
-capture = open_capture_directory("capture-demo")
-result = engine.process_capture(capture.slots, capture.valid)
-print(result.identities)
+class Backend:
+    def acquire(self, plan, request) -> CaptureFrame:
+        ...
+
+runtime = ReconstructionRuntime(engine, Backend(), calibration=calibration_provider)
+outcome = runtime.run_once()
 ```
 
-## Release profile
+`CaptureFrame` carries the plan fingerprint, sequence number, monotonic capture interval, optional per-slot timestamps, validity mask and aperture scale. The runtime rejects or reacquires frames that violate the configured contract before reconstruction.
 
-The default 1.0 plan is intentionally finite and inspectable:
+See [`examples/runtime_backend.py`](examples/runtime_backend.py) for a complete adapter skeleton.
 
-| Property | Default |
-|---|---:|
-| Address space | 32 bit (`2^32` virtual addresses) |
-| Local hash aperture | 8 bit / 256 states |
-| Hash views | 14 |
-| Physical query states | 3584 |
-| Receiver channels in acceptance harness | 8 |
-| Named inversion method | SFPTI |
-| Single-pass temporal realization | GTF |
-| High-dynamics fallback | VTQC |
+## Capture format
 
-The release benchmark files in `results/` record measured software-channel behavior for the exact source tree shipped here. They are not field-range claims and are not substitutes for a deployment-specific link budget.
+The reference binary replay format is data-only:
 
-### Measured release acceptance
+```text
+capture/
+  metadata.json
+  capture.c64
+  valid.u8
+  timestamps.i64        optional
+```
 
-The combined-fault acceptance profile simultaneously applies 30 dB near/far spread, 6 dB weakest fiber-matched bucket SNR, 0.40-cycle residual phase span per local view, 2% slot erasure and a 0.10 first-order switch-memory coefficient. Across the ten release seeds:
+The complex array is slot-major and receiver-minor. `metadata.json` includes a SHA-256 query-plan fingerprint and capture timing. A capture is not accepted as a measured zero when a slot is invalid; it remains an erasure through the reconstruction path.
 
-| Metric | Measured |
-|---|---:|
-| Release-gate passes | **10 / 10** |
-| Mean precision | **1.000000** |
-| Minimum precision | **1.000000** |
-| Mean recall | **0.990625** |
-| Minimum recall | **0.968750** |
-| Final false IDs | **0** |
+## Calibration contract
 
-A separate `complex64` memory-mapped replay recovers 32/32 active addresses with no false ID. See [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) and the machine-readable files in [`results/`](results/).
+Calibration is snapshotted per reconstruction attempt. The public model carries:
 
-## Public-core boundary
+- a calibration epoch;
+- calibrated causal switch-response taps;
+- optional per-receiver complex gain;
+- optional validity interval.
 
-SparseEcho deliberately does **not** publish or assume a particular endpoint, carrier, wavelength, antenna/optical geometry, mobility platform or sensing payload. The following are outside this repository:
+The reference JSON store is intentionally data-only. Production systems can supply the same values from another configuration service or calibration process.
 
-- endpoint circuit/mechanical implementation;
-- propagation-specific illumination and collection geometry;
-- calibrated hardware transfer-function packs;
-- platform state/control interfaces;
-- deployment-specific thresholds and scheduling policy;
-- field datasets whose metadata would bind the reconstruction kernel to a particular deployment.
+## Evidence and operating envelope
 
-The repository therefore describes what is required to reproduce and test the **reconstruction substrate**, not the surrounding system.
+Matched simulation is retained for regression and examples. Release robustness evidence is generated by `validation/independent_forward.py`, which does not import SparseEcho temporal, transform, simulator or recovery implementations.
 
-## Novelty boundary
+Stored evidence includes:
 
-SparseEcho does not claim invention of Gray code, Walsh-Hadamard transforms, sparse WHT recovery, linear hashing, peeling, least-squares repair, challenge/response sensing, or Hadamard measurement ordering. Those are established tools.
+- forward/inverse switch-model mismatch;
+- burst and IID erasures;
+- receiver-correlated and temporally correlated noise;
+- receiver calibration drift;
+- non-polynomial phase terms;
+- cross-view receiver-direction drift;
+- execution-order, view-count, spatial-evidence and fiber-aware ablations.
 
-The project name **SFPTI** refers to the co-designed construction in which a sequential physical query schedule is chosen so that **physical time itself has structured transform support**, allowing time-varying nuisance to be represented, budgeted and inverted as a spectral fiber. GTF is the concrete Walsh/Gray realization shipped here.
+The results intentionally include failure regions. In particular, severe cross-view channel rotation, very low weakest-source SNR, high active count and extreme near/far spread remain outside the current public envelope. See [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
 
-The included prior-art notes are engineering documentation, not a patentability or freedom-to-operate opinion. See [`docs/PRIOR_ART_BOUNDARY.md`](docs/PRIOR_ART_BOUNDARY.md).
+This repository does **not** claim field validation for a particular platform or propagation geometry.
 
 ## Repository map
 
 ```text
-sparseecho/
-  planning/       query plans, linear hash views, aperture budgets
-  transforms/     Walsh/Gray primitives
-  temporal/       GTF, exact Doppler fibers, VTQC, erasure/transient handling
-  recovery/       local fiber recovery and global list consistency
-  io/             raw complex64 slot replay
-  simulator/      public physical-query channel harness
-  metrics/        acceptance metrics
-
-docs/
-  SFPTI.md
-  ARCHITECTURE.md
-  ENGINEERING_BOUNDARY.md
-  INTEGRATION.md
-  BENCHMARKS.md
-  PRIOR_ART_BOUNDARY.md
-benchmarks/
-examples/
-tests/
-results/
+src/sparseecho/       reference reconstruction and runtime
+validation/           independent forward model
+benchmarks/           reproducible acceptance and stress runs
+tests/                unit, contract and runtime tests
+configs/              reference runtime configuration
+schemas/              data contracts
+include/               C ABI data boundary
+proto/                 service-message boundary
+examples/              integration examples
+docs/                  architecture, theory and operations
+results/               stored release evidence
 ```
+
+## Engineering documents
+
+- [`README_RELEASES.md`](README_RELEASES.md) — short release/version model.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — process and data-plane architecture.
+- [`docs/INTEGRATION.md`](docs/INTEGRATION.md) — acquisition, calibration and transport contracts.
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — runtime lifecycle, fault handling and telemetry.
+- [`docs/PORTING.md`](docs/PORTING.md) — non-Python implementation compatibility points.
+- [`docs/API_STABILITY.md`](docs/API_STABILITY.md) — compatibility guarantees for deployment contracts.
+- [`docs/ENGINEERING_ASSURANCE.md`](docs/ENGINEERING_ASSURANCE.md) — validation tiers and release checks.
+- [`docs/SFPTI.md`](docs/SFPTI.md) — method notes and claim boundary.
+- [`docs/BASELINES.md`](docs/BASELINES.md) — architecture and ordering controls.
+- [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) — measured evidence and failure regions.
+- [`docs/DESIGN_NOTES.md`](docs/DESIGN_NOTES.md) — design evolution and discarded approaches.
+- [`docs/ENGINEERING_BOUNDARY.md`](docs/ENGINEERING_BOUNDARY.md) — what the public component includes and excludes.
+- [`docs/PRIOR_ART_BOUNDARY.md`](docs/PRIOR_ART_BOUNDARY.md) — established components versus the SFPTI construction.
+
+## Release checks
+
+```bash
+make check
+```
+
+The check compiles the Python tree, runs the test suite and checks the release tree for non-public identifiers and temporary release markers.
 
 ## License
 
-Apache-2.0. See [`LICENSE`](LICENSE).
+Apache-2.0. See `LICENSE` and `NOTICE`.

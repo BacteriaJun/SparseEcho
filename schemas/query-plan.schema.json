@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparseecho.invalid/schema/query-plan-v1.json",
+  "title": "SparseEcho query plan",
+  "type": "object",
+  "required": [
+    "identity_bits", "local_bits", "n_views", "slots_per_view", "pass_count",
+    "physical_slots", "aperture_scale", "ordering", "local_order", "challenges",
+    "plan_fingerprint"
+  ],
+  "properties": {
+    "identity_bits": {"type": "integer", "minimum": 1, "maximum": 64},
+    "local_bits": {"type": "integer", "minimum": 1, "maximum": 16},
+    "n_views": {"type": "integer", "minimum": 1},
+    "slots_per_view": {"type": "integer", "minimum": 2},
+    "pass_count": {"enum": [1, 2, 4]},
+    "physical_slots": {"type": "integer", "minimum": 1},
+    "aperture_scale": {"type": "number", "exclusiveMinimum": 0},
+    "ordering": {"enum": ["gray", "binary", "random"]},
+    "local_order": {"type": "array", "items": {"type": "integer"}},
+    "challenges": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+    "plan_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": true
+}

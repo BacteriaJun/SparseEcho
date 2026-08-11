@@ -1,16 +1,22 @@
 # Changelog
 
-## 1.0 — Initial public release
+## 1.1
 
-Initial public release of the SparseEcho reconstruction core.
+1.1 is the operationalization release for the current SFPTI generation.
 
-The release centers on **Spectrally Factorized Physical-Time Inversion (SFPTI)** and ships:
+Key changes:
 
-- Gray Temporal Fiber (GTF) query scheduling and exact residual-Doppler fiber models;
-- a physical query compiler for 32-bit address spaces without population-scale dictionaries;
-- hardware-neutral complex-baseband slot ingestion;
-- switch-settling and slot-erasure handling;
-- multi-view support reconstruction and consistency filtering;
-- Virtual-Time Query Compilation (VTQC) as a high-dynamics fallback;
-- synthetic physical-channel and binary-replay acceptance paths;
-- deterministic tests for the core algebraic invariants and scheduling properties.
+- closed acquisition/reconstruction/reacquisition loop through a backend contract;
+- runtime validation of plan identity, timing, erasure rate and calibration epoch;
+- calibration snapshots and per-capture switch/receiver correction inputs;
+- structured runtime fault policy and JSONL telemetry journal;
+- stable capture, query-plan and result schemas for non-Python integration;
+- C ABI and protobuf interface contracts for deployment adapters;
+- continuous switch-state treatment across view boundaries;
+- CFAR local proposal generation with an explicit compute budget;
+- low-rank cross-view receiver-subspace consistency;
+- independent forward validation, mismatch sweeps and architecture ablations;
+- aperture-budget feedback connected to runtime reacquisition;
+- release checks that separate matched regression from independent validation.
+
+The public package still terminates at the acquisition/control boundary. Endpoint hardware, deployment geometry and field calibration assets are not part of this repository.

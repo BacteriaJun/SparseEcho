@@ -1,0 +1,16 @@
+{
+  "state": "completed",
+  "attempts": [
+    {
+      "aperture_scale": 1.0,
+      "decision": "compress",
+      "tail": 0.00026400309419499166
+    },
+    {
+      "aperture_scale": 0.5763191883776143,
+      "decision": "accept",
+      "tail": 8.31353280575235e-06
+    }
+  ],
+  "n_identities": 32
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparseecho.invalid/schema/reconstruction-result-v1.json",
+  "title": "SparseEcho reconstruction result",
+  "type": "object",
+  "required": ["identities", "n_identities", "candidate_count", "pass_count", "views"],
+  "properties": {
+    "identities": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+    "n_identities": {"type": "integer", "minimum": 0},
+    "candidate_count": {"type": "integer", "minimum": 0},
+    "pass_count": {"enum": [1, 2, 4]},
+    "views": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": true
+}

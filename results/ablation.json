@@ -1,0 +1,72 @@
+{
+  "profile": "architecture-ablation",
+  "software_version": "1.1",
+  "seed": 0,
+  "runs": [
+    {
+      "case": "default",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "candidate_count": 461,
+      "elapsed_seconds": 23.472146864000024
+    },
+    {
+      "case": "rank1",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "candidate_count": 461,
+      "elapsed_seconds": 23.127782068999977
+    },
+    {
+      "case": "no-spatial",
+      "precision": 0.11267605633802817,
+      "recall": 1.0,
+      "f1": 0.20253164556962025,
+      "candidate_count": 284,
+      "elapsed_seconds": 19.994109463000086
+    },
+    {
+      "case": "views-12",
+      "precision": 0.8,
+      "recall": 1.0,
+      "f1": 0.888888888888889,
+      "candidate_count": 4489,
+      "elapsed_seconds": 11.121113224000055
+    },
+    {
+      "case": "views-14",
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "candidate_count": 5201,
+      "elapsed_seconds": 25.193350809000094
+    },
+    {
+      "case": "binary",
+      "precision": 1.0,
+      "recall": 0.9375,
+      "f1": 0.967741935483871,
+      "candidate_count": 455,
+      "elapsed_seconds": 17.776279370999873
+    },
+    {
+      "case": "random",
+      "precision": 1.0,
+      "recall": 0.6875,
+      "f1": 0.8148148148148148,
+      "candidate_count": 22,
+      "elapsed_seconds": 8.346653706000097
+    },
+    {
+      "case": "fiber-blind",
+      "precision": 1.0,
+      "recall": 0.78125,
+      "f1": 0.8771929824561403,
+      "candidate_count": 462,
+      "elapsed_seconds": 20.732519555999943
+    }
+  ],
+  "note": "Regenerated from the final 1.1 source tree using the independent forward model. One seed per case; this is contribution isolation, not a confidence interval."
+}

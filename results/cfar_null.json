@@ -1,0 +1,10 @@
+{
+  "profile": "cfar-null",
+  "software_version": "1.1",
+  "trials": 100,
+  "proposal_budget": 48,
+  "mean_proposals": 0.09,
+  "max_proposals": 2,
+  "budget_saturations": 0,
+  "note": "Regenerated from the final 1.1 source tree using pure complex-Gaussian local views."
+}

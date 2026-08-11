@@ -1,6 +1,6 @@
 SparseEcho
 Copyright 2026 SparseEcho contributors
 
-This distribution contains an application-neutral reconstruction core. External platform geometry,
-endpoint implementation, calibrated deployment transfer functions, field calibration material and
-operational control layers are outside the public tree.
+This distribution contains the query-planning and reconstruction layer of a larger measurement
+stack. Endpoint implementation, deployment geometry, calibrated transfer functions, field
+calibration material and operational control are outside the public source tree.

@@ -1,10 +1,9 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.venv/
 build/
 *.egg-info/
-.venv/
-.env
-*.c64
-*.npy
-*.npz
+.DS_Store
+*.tmp
+*.log

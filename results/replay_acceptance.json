@@ -1,14 +1,14 @@
 {
-  "profile": "sfpti-1.0-complex64-replay",
-  "software_version": "1.0",
-  "capture_bytes": 229376,
-  "physical_slots": 3584,
+  "software_version": "1.1",
+  "seed": 17,
+  "physical_slots": 4096,
   "receivers": 8,
-  "decoder_ground_truth_access": false,
+  "plan_fingerprint": "0abd963adf24668b2a063b47839920f2a9ed11ebec67e6f6b0c20f946b94dfe0",
   "precision": 1.0,
   "recall": 1.0,
   "f1": 1.0,
   "true_positive": 32,
   "false_positive": 0,
-  "false_negative": 0
+  "false_negative": 0,
+  "source": "independent synthetic forward; not hardware capture"
 }

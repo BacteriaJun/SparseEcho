@@ -1,113 +1,90 @@
-# Spectrally Factorized Physical-Time Inversion (SFPTI)
+# SFPTI notes
 
-This note defines the mathematical construction implemented by SparseEcho 1.0. It separates the named SFPTI mechanism from the standard transforms and recovery tools used around it.
+**Spectrally Factorized Physical-Time Inversion (SFPTI)** is the name used in this repository for the schedule-nuisance-inverse co-design implemented by SparseEcho.
 
-## 1. Local physical-query model
+The name does not refer to a new Walsh transform or a new sparse-Fourier solver. The distinctive part of the design is that the physical execution schedule is treated as a controllable coordinate of the inverse problem, and the recovery path is written around the structure that schedule induces in transform space.
 
-Let an address be `q in F_2^m`. A local hash view is a linear map
+## 1. Local query model
+
+Let a 32-bit address be `q in F_2^m`. A local view is a linear map
 
 \[
 z=Mq\in\mathbb F_2^r.
 \]
 
-For a local query `u in F_2^r`, the corresponding global parity challenge is
+For a local query `u`, the physical parity challenge is
 
 \[
 a=M^T u.
 \]
 
-The address-dependent binary response is therefore
+The binary response obeys
 
 \[
 (-1)^{a^Tq}=(-1)^{u^TMq}=\chi_z(u).
 \]
 
-For sparse active support `q_k`, a complex receiver channel `h_k(t)`, and sequential physical execution time `t(u)`, one local view observes
+For sparse active support and sequential execution time `t(u)`, a receiver sees
 
 \[
 y(u)=\sum_k h_k(t(u))\chi_{z_k}(u)+n(u).
 \]
 
-If `h_k` were constant over the view, a normalized WHT would place each source at its local bucket `z_k`. SFPTI addresses the fact that `h_k(t(u))` is generally not constant.
+If `h_k` were constant during one view, a WHT would place each component at its local bucket. The temporal term is therefore a nuisance that is coupled to query execution order.
 
-## 2. Minimum-support physical time embedding
+## 2. Time-coordinate support
 
-Execute local queries in reflected Gray order. Let `j` be physical rank and `u=Gray(j)`. For Gray bit coordinates indexed from least significant to most significant, the inverse-Gray binary bit satisfies
+For an `r`-bit reflected Gray schedule, physical rank can be expanded in `r` Walsh characters. If `s_i` are the inverse-Gray suffix masks,
 
 \[
-b_i(u)=\bigoplus_{k=i}^{r-1}u_k.
+\tau(u)=-\frac12\sum_{i=0}^{r-1}2^i\chi_{s_i}(u).
 \]
 
-Define the Walsh character corresponding to the suffix mask `s_i` by
+The time coordinate therefore has exactly `r` non-zero Walsh generators.
+
+An injective real-valued function on `F_2^r` represented by only `s` Walsh characters can take at most `2^s` different values. A schedule assigning a distinct time to all `2^r` queries consequently requires `s >= r`. Gray rank reaches that bound.
+
+**Natural binary rank also reaches the same `r`-character lower bound.** This is important. The spectral property is not unique to Gray ordering. Gray is retained in the default implementation because adjacent states differ by one bit, while natural binary has carry transitions and random ordering is nearly full-support in time.
+
+For `r=8`, the release theory check measures:
+
+```text
+ordering        time-Walsh support    mean adjacent Hamming jump
+gray                     8                       1.000
+binary                   8                       1.969
+random                  255                       3.890
+```
+
+## 3. Residual-Doppler fiber
+
+For constant residual phase increment,
 
 \[
-\chi_{s_i}(u)=(-1)^{b_i(u)}.
+h(u)=e^{j\Omega\tau(u)},
 \]
 
-Since `b_i=(1-chi_{s_i})/2` and `j=sum_i 2^i b_i`, the centered rank is
+and `theta_i = Omega 2^i / 2`, the Gray schedule factorizes as
 
 \[
-\boxed{
-\tau(u)=j-\frac{2^r-1}{2}
-=-\frac12\sum_{i=0}^{r-1}2^i\chi_{s_i}(u)
-}.
-\]
-
-Thus physical time has exactly `r` nonzero Walsh generators.
-
-### Proposition 1 — support lower bound
-
-Let `f:F_2^r -> R` be injective and suppose its Walsh expansion contains `s` characters. Then `s >= r`.
-
-**Reason.** `f(u)` depends only on the `s` signs produced by those characters, so its range contains at most `2^s` values. Injectivity over `2^r` inputs requires `2^s >= 2^r`.
-
-Gray rank attains `s=r`. Natural binary rank also attains the spectral lower bound; Gray execution adds the independent engineering optimum that each adjacent physical query differs by exactly one bit, the minimum possible nonzero state transition.
-
-## 3. Exact Gray-Doppler fiber
-
-Consider a constant residual angular phase increment `Omega` per physical slot:
-
-\[
-h(u)=e^{j\Omega\tau(u)}.
-\]
-
-Substitute the Gray-time expansion and define
-
-\[
-\theta_i=\frac{\Omega2^i}{2}.
-\]
-
-Because each character is `+1/-1`, the phase term factorizes exactly:
-
-\[
-\boxed{
 e^{j\Omega\tau(u)}=
-\prod_{i=0}^{r-1}
-\left(\cos\theta_i-j\chi_{s_i}(u)\sin\theta_i\right)
-}.
+\prod_i\left(\cos\theta_i-j\chi_{s_i}(u)\sin\theta_i\right).
 \]
 
-For a generator subset `S`, let
+For a subset `S` of time generators,
 
 \[
-s_S=\bigoplus_{i\in S}s_i.
-\]
-
-The normalized Walsh coefficient at `s_S` is
-
-\[
-\boxed{
 c_S=(-j)^{|S|}
 \prod_{i\in S}\sin\theta_i
-\prod_{i\notin S}\cos\theta_i
-}.
+\prod_{i\notin S}\cos\theta_i.
 \]
 
-A source whose static local bucket is `z` therefore produces the translated fiber `z xor s_S` rather than unconstrained transform-domain leakage.
+A static bucket `z` is therefore translated into the structured set `z xor s_S` rather than arbitrary spectral leakage.
 
-## 4. Exact shell-energy law
+Natural binary execution has an analogous product structure with basis-coordinate generators. The useful abstraction is the **low-generator physical-time embedding**, not Gray code by itself.
 
-The coefficient energy is
+## 4. Shell-energy budget
+
+Coefficient energy is
 
 \[
 |c_S|^2=
@@ -115,89 +92,72 @@ The coefficient energy is
 \prod_{i\notin S}\cos^2\theta_i.
 \]
 
-Let independent Bernoulli variables satisfy
+If independent Bernoulli variables satisfy
 
 \[
-X_i\sim Bernoulli(\sin^2\theta_i).
+X_i\sim\operatorname{Bernoulli}(\sin^2\theta_i),
 \]
 
-Then the total energy in temporal shell `d=|S|` is exactly
+then energy in shell `d=|S|` is the Poisson-binomial mass
 
 \[
-\boxed{
-E_d=P\left(\sum_i X_i=d\right)
-}.
+E_d=P\left(\sum_iX_i=d\right).
 \]
 
-The tail above a modeled shell order `D` is therefore
+`ApertureBudget` numerically inverts the tail above the modeled shell order. With `r=8`, order 3 and a `1e-5` tail budget, the default maximum phase span is approximately `0.41623` cycles per view.
 
-\[
-E_{>D}=\sum_{d=D+1}^rE_d.
-\]
+## 5. Local inversion
 
-`ApertureBudget` numerically inverts this relation. For the default `r=8`, modeling through shell order 3 and constraining the unmodeled tail to `1e-5` permits approximately `0.416` cycles of residual phase span per local view.
+`GrayFiberViewDecoder` searches a bounded residual-phase family and uses XOR matched filtering to propose local buckets. The 1.1 reference decoder uses a CFAR threshold estimated from the lower-energy bucket population. `max_components` is only a compute guard.
 
-## 5. Residual phase readout from the fiber
+The local stage intentionally does not decide global identity. Local proposals are resolved by redundant structured views, validation views and receiver-subspace evidence.
 
-Let `C_0` be the complex receiver vector at the anchor and `C_i` the first-shell vector at `z xor s_i`. In the single-component model,
+## 6. Smooth temporal nuisance
 
-\[
-\frac{C_i}{C_0}=-j\tan\theta_i.
-\]
-
-With multiple receiver channels, a coherent ratio can be formed as
-
-\[
-\rho_i=\frac{C_0^H C_i}{\|C_0\|^2}.
-\]
-
-The local residual phase increment is initialized from
-
-\[
-\theta_i\approx\arctan(-Im\,\rho_i).
-\]
-
-SparseEcho uses exact fiber templates on a bounded phase grid for robust local CLEAN recovery; the ratio identity is retained as a diagnostic/initializer and can be used by higher-level planners.
-
-## 6. Smooth non-Doppler temporal nuisance
-
-If a local temporal response is approximated by a polynomial
+If local evolution is approximated by
 
 \[
 h(\tau)=\sum_{p=0}^d c_p\tau^p,
 \]
 
-then `tau` is generated by `r` Walsh characters, and `tau^p` contains only XOR combinations of at most `p` generators. Consequently the transform support induced by degree `d` temporal evolution lies inside the union of shells 0 through `d`, with cardinality bounded by
+and time is generated by `r` characters, then `tau^p` lies in XOR combinations of at most `p` generators. Temporal leakage through degree `d` is therefore contained in at most
 
 \[
-\sum_{j=0}^{d}\binom{r}{j}.
+\sum_{j=0}^d {r\choose j}
 \]
 
-This is an algebraic support statement; approximation error is controlled separately by how accurately the local time evolution is represented by the chosen model.
+shell locations. This is a support statement. Model error is separate and is exercised by the independent generator using sinusoidal phase and quadratic terms.
 
-## 7. Virtual-Time Query Compilation (VTQC)
+## 7. Aperture control and virtual-time primitives
 
-GTF is the low-cost single-pass path. When the estimated fiber tail exceeds a configured budget, VTQC can repeat selected physical queries at times `t_r` and synthesize a common-time sample using weights `w_r` satisfying
+The default 1.1 high-dynamics response is **aperture compression**:
 
-\[
-\sum_rw_r(t_r-t_c)^p=\delta_{p0},\qquad p=0,\ldots,d.
-\]
+1. process a nominal single-pass aperture;
+2. estimate a robust view-phase statistic from high-confidence local components;
+3. evaluate the exact fiber-tail budget;
+4. if over budget, ask the acquisition boundary for a shorter aperture;
+5. reacquire and repeat, subject to a bounded number of attempts.
 
-The resulting virtual sample reproduces all temporal polynomials through degree `d` at `t_c`. This is a fallback; the public default plan is a single Gray sweep per view.
+This is implemented by `AdaptiveAcquisitionController` and `AdaptiveReconstructionSession`.
 
-## 8. What SFPTI does and does not claim
+The code also exposes 2-pass and 4-pass moment-constrained virtual-time synthesis. End-to-end dynamic tests show that blindly extending acquisition duration to collect repeated passes can attenuate a fast complex exponential. Multi-pass synthesis is therefore an explicit primitive, not the default claim for high dynamics.
 
-SFPTI is the name used in this repository for **co-designing a sequential physical transform-query schedule so that physical time has structured support in the target transform domain, and then exploiting the resulting temporal fiber during inversion and acquisition planning**.
+## 8. SFPTI claim boundary
 
-The following surrounding tools are established techniques and are not claimed as inventions of SparseEcho:
+The project-level research claim is narrow:
 
-- Gray code;
+> A sequential sparse-transform measurement can be co-designed across execution schedule, temporal-nuisance representation and fiber-aware inversion so that physical time is an explicit structured coordinate of the reconstruction problem.
+
+The following are established tools and are not presented as inventions of SparseEcho:
+
+- Gray code and natural-binary ordering;
 - Walsh-Hadamard transforms;
 - sparse WHT / sparse Fourier recovery;
-- linear hashing and list consistency;
+- linear hashing and list recovery;
+- CFAR detection;
 - CLEAN/peeling-style subtraction;
-- least-squares erasure reconstruction;
-- interpolation/moment matching;
+- least-squares erased-sample reconstruction;
+- moment interpolation;
 - query-controlled physical sensing in the broad sense.
 
 See `PRIOR_ART_BOUNDARY.md` and `REFERENCES.md`.

@@ -1,12 +1,14 @@
-============================= test session starts ==============================
-platform linux -- Python 3.13.5, pytest-9.0.2, pluggy-1.6.0
-rootdir: /mnt/data/SparseEcho-1.0
-configfile: pyproject.toml
-testpaths: tests
-plugins: cov-7.0.0, Faker-40.1.2, ddtrace-4.4.0, asyncio-1.3.0, anyio-4.13.0, metadata-3.1.1, json-report-1.5.0
-asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collected 13 items
+SparseEcho 1.1 release acceptance
 
-tests/test_core.py .............                                         [100%]
-
-============================== 13 passed in 1.68s ==============================
+python=3.13.5
+unit_contract_runtime_tests=16 passed
+release_tree_check=passed
+c_header_c11_syntax=passed
+json_schema_documents=parse_ok
+isolated_wheel_import=passed
+isolated_wheel_version=1.1
+reference_single_pass_slots=4096
+reference_plan_fingerprint=0abd963adf24668b2a063b47839920f2a9ed11ebec67e6f6b0c20f946b94dfe0
+runtime_reference_replay=completed; attempts=1; identities=32
+wheel_sha256=2f4c50818c6fc4b5cd41d3844c2174ece5192c4446c997c5ba697486494d8463
+protobuf_source=shipped; protoc was not available in the release build environment

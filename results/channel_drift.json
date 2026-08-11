@@ -1,0 +1,43 @@
+{
+  "profile": "cross-view-channel-drift",
+  "software_version": "1.1",
+  "points": [
+    {
+      "rho": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_positive": 0,
+      "false_negative": 0,
+      "elapsed_seconds": 12.38873843500005
+    },
+    {
+      "rho": 0.98,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_positive": 0,
+      "false_negative": 0,
+      "elapsed_seconds": 14.032748838000089
+    },
+    {
+      "rho": 0.9,
+      "precision": 1.0,
+      "recall": 0.875,
+      "f1": 0.9333333333333333,
+      "false_positive": 0,
+      "false_negative": 4,
+      "elapsed_seconds": 13.030471447999844
+    },
+    {
+      "rho": 0.8,
+      "precision": 1.0,
+      "recall": 0.40625,
+      "f1": 0.5777777777777777,
+      "false_positive": 0,
+      "false_negative": 19,
+      "elapsed_seconds": 13.153951706000043
+    }
+  ],
+  "note": "Regenerated from the final 1.1 source tree after separating receiver direction from near/far amplitude in the independent forward state."
+}

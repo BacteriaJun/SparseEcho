@@ -1,0 +1,56 @@
+{
+  "profile": "switch-model-mismatch",
+  "software_version": "1.1",
+  "inverse_fir": [
+    0.9,
+    0.1
+  ],
+  "points": [
+    {
+      "true_coefficient": 0.08,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_positive": 0,
+      "false_negative": 0,
+      "elapsed_seconds": 22.33467376899989
+    },
+    {
+      "true_coefficient": 0.1,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_positive": 0,
+      "false_negative": 0,
+      "elapsed_seconds": 19.215474567
+    },
+    {
+      "true_coefficient": 0.12,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_positive": 0,
+      "false_negative": 0,
+      "elapsed_seconds": 21.15394305199993
+    },
+    {
+      "true_coefficient": 0.2,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "false_positive": 0,
+      "false_negative": 0,
+      "elapsed_seconds": 13.042389893000063
+    },
+    {
+      "true_coefficient": 0.35,
+      "precision": 1.0,
+      "recall": 0.84375,
+      "f1": 0.9152542372881356,
+      "false_positive": 0,
+      "false_negative": 5,
+      "elapsed_seconds": 18.719912254000064
+    }
+  ],
+  "note": "Regenerated from the final 1.1 source tree. The coefficient sweep uses an independently implemented first-order state response; the primary release acceptance uses the separate two-pole forward family."
+}

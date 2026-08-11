@@ -1,9 +1,0 @@
-cff-version: 1.2.0
-title: "SparseEcho"
-message: "If you use this software, please cite the repository and the 1.0 release."
-type: software
-version: 1.0
-date-released: 2026-08-10
-authors:
-  - name: "SparseEcho Contributors"
-license: Apache-2.0

@@ -1,18 +1,18 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=70", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "sparseecho-sfpti"
-version = "1.0"
-description = "Hardware-neutral reconstruction of sparse time-varying modulated scatterer fields using Spectrally Factorized Physical-Time Inversion."
+version = "1.1"
+description = "Deployment-facing reference implementation of SFPTI sparse physical-time reconstruction."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
-authors = [{name = "SparseEcho Contributors"}]
-keywords = ["signal-processing", "walsh-hadamard", "sparse-recovery", "complex-baseband", "inverse-problems"]
+authors = [{name = "BacteriaJun"}]
+keywords = ["signal-processing", "sparse-recovery", "complex-baseband", "inverse-problems", "runtime"]
 classifiers = [
-  "Development Status :: 5 - Production/Stable",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: Apache Software License",
@@ -26,14 +26,21 @@ classifiers = [
 dependencies = ["numpy>=1.24"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "build>=1.2"]
 
 [project.scripts]
 sparseecho = "sparseecho.cli:main"
 
+[tool.setuptools]
+package-dir = {"" = "src"}
+
 [tool.setuptools.packages.find]
-include = ["sparseecho*"]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

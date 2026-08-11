@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sparseecho.invalid/schema/capture-manifest-v2.json",
+  "title": "SparseEcho capture manifest",
+  "type": "object",
+  "required": [
+    "format", "physical_slots", "n_rx", "pass_count", "aperture_scale",
+    "sequence_id", "monotonic_start_ns", "monotonic_end_ns", "plan_fingerprint",
+    "capture", "valid_mask"
+  ],
+  "properties": {
+    "format": {"const": "sparseecho-slot-complex64-v2"},
+    "physical_slots": {"type": "integer", "minimum": 1},
+    "n_rx": {"type": "integer", "minimum": 1},
+    "pass_count": {"enum": [1, 2, 4]},
+    "aperture_scale": {"type": "number", "exclusiveMinimum": 0},
+    "sequence_id": {"type": "integer", "minimum": 0},
+    "monotonic_start_ns": {"type": "integer", "minimum": 0},
+    "monotonic_end_ns": {"type": "integer", "minimum": 1},
+    "plan_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "calibration_epoch": {"type": ["string", "null"]},
+    "capture": {"type": "string"},
+    "valid_mask": {"type": "string"},
+    "timestamps": {"type": ["string", "null"]},
+    "plan": {"type": "object"},
+    "extra": {"type": "object"}
+  },
+  "additionalProperties": true
+}

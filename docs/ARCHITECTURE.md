@@ -1,90 +1,99 @@
 # Architecture
 
-SparseEcho 1.0 is organized around the measurement contract rather than around a simulator.
+SparseEcho 1.1 is organized as a deployment-facing reconstruction component. The simulator is not part of the runtime data plane.
 
-## Data plane
+## Process boundary
+
+A typical deployment has at least three responsibilities:
 
 ```text
-QueryPlan
-   |
-   +--> view 0: 256 Gray-ordered states
-   +--> view 1: 256 Gray-ordered states
-   ...
-   +--> view 13
-   |
-   v
-slot-major complex baseband + validity mask
-   |
-   v
-switch-response inverse
-   |
-   v
-initial local WHT / GTF decode
-   |
-   +--> candidate-conditioned erasure repair when needed
-   |
-   v
-final local spectra
-   |
-   v
-structured/list support assembly
-   |
-   v
-multi-view spatial consistency
-   |
-   v
-32-bit sparse support
+acquisition process          SparseEcho runtime             consuming system
+-------------------          ------------------             ----------------
+apply query state     ───▶   validate frame
+capture complex slots        snapshot calibration
+mark invalid slots           reconstruct support      ───▶  consume identities
+provide timestamps           evaluate fiber budget          consume diagnostics
+                    ◀───     request reacquisition           store telemetry
 ```
 
-## Planner
+The acquisition process can be in another language or host. The public contract is represented by the Python protocol, C header, protobuf messages and JSON capture schema.
 
-`planning/` owns information that must be known before physical acquisition:
+## Runtime state machine
+
+`ReconstructionRuntime` owns a bounded operating cycle:
+
+```text
+IDLE
+  ↓
+ACQUIRING
+  ↓
+frame validation
+  ├─ hard contract fault ──▶ FAULTED
+  ├─ recoverable frame fault ──▶ reacquire (bounded)
+  ↓
+RECONSTRUCTING
+  ↓
+fiber-tail decision
+  ├─ accept ──▶ COMPLETED
+  └─ compress aperture ──▶ REACQUIRE_PENDING ──▶ ACQUIRING
+```
+
+The runtime does not keep retrying indefinitely. `RuntimeLimits` bounds reacquisition count and input quality.
+
+## Reconstruction data plane
+
+```text
+CaptureFrame
+  ↓
+continuous calibrated switch inverse
+  ↓
+receiver calibration
+  ↓
+per-view slot synthesis
+  ↓
+local WHT
+  ↓
+CFAR fiber-aware proposals
+  ↓
+candidate-conditioned erasure repair
+  ↓
+final local spectra
+  ↓
+redundant structured support assembly
+  ↓
+receiver-subspace consistency
+  ↓
+32-bit sparse support + diagnostics
+```
+
+Global recovery never constructs a `2^32` population vector or codebook.
+
+## Planning plane
+
+`planning/` owns information that must exist before acquisition:
 
 - linear hash views;
-- global challenge masks;
-- Gray execution order;
-- physical slot count;
-- residual-Doppler aperture budgets.
+- global parity challenge masks;
+- physical execution ordering;
+- plan fingerprint;
+- pass structure;
+- temporal-fiber aperture budget.
 
-The default profile contains 14 views × 256 states = 3584 physical states.
+The fingerprint is a SHA-256 digest of the logical single-pass plan. Capture frames with a different fingerprint are rejected before reconstruction.
 
-## Temporal layer
+## Calibration plane
 
-`temporal/` is the SFPTI-specific layer:
+A calibration provider snapshots the calibration epoch at each attempt. The public reference values are:
 
-- exact Gray-Doppler fiber coefficients;
-- exact shell-energy distribution;
-- residual phase-span diagnostics;
-- Virtual-Time Query Compilation primitives;
-- switch-response correction;
-- candidate-conditioned erasure repair.
+- causal switch-response FIR taps;
+- receiver complex gain/phase.
 
-## Recovery layer
+The runtime records the epoch used for each reconstruction attempt. Deployment-specific calibration discovery remains outside the repository.
 
-`recovery/` deliberately separates local and global complexity.
+## Observability
 
-Local recovery operates on a 256-bin transform aperture and may use dense local operations. Global recovery never constructs a `2^32` vector or codebook; it combines a small list of local bucket candidates across fixed linear projections.
+`JsonlTelemetrySink` records acquisition requests, frame rejection, calibration epoch, reconstruction latency, identity count, tail energy and runtime decisions. Telemetry is append-only JSONL so it can be ingested by an external logging system without coupling SparseEcho to one operations stack.
 
-## Capture contract
+## Non-Python integration
 
-`io/` treats a physical capture as:
-
-```text
-capture.c64  complex64[physical_slots, n_rx]
-valid.u8     uint8[physical_slots]
-metadata.json
-```
-
-The binary path is memory-mapped. Synthetic input uses the same in-memory shape and does not receive a privileged decoder API.
-
-## Failure surfaces
-
-The public engine exposes, rather than hides, the main assumptions:
-
-- each local view must remain inside a configured residual-dynamics envelope;
-- enough structured views must retain the weak component to form a global candidate;
-- receiver-space fingerprints should remain sufficiently stable across the acquisition aperture for the default consistency filter;
-- the reference switch-response inverse assumes a calibrated first-order model;
-- severe erasure and settling combinations may require a deployment-specific adapter or additional view redundancy.
-
-These are engineering surfaces, not claims of universal identifiability.
+`include/sparseecho/runtime.h` and `proto/sparseecho_runtime.proto` intentionally contain only the stable data boundary. They do not claim a C implementation is shipped. A production service can replace the Python reference while preserving plan/capture/result compatibility.
