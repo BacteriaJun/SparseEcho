@@ -9,3 +9,5 @@ make check
 ```
 
 For algorithm changes, include the relevant baseline or failure-region result. For runtime changes, include at least one contract/state-machine test. Avoid embedding deployment-specific geometry, endpoint implementation details or field calibration constants in the public tree.
+
+Please respect the usage limits of this project.
